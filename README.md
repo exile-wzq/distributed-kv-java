@@ -51,7 +51,7 @@ com.exile.kv
 
 ## 快速开始
 1. 克隆项目
-git clone https://github.com/Exile3927/distributed-kv-java.git
+git clone https://github.com/exile-wzq/distributed-kv-java.git
 
 2. 使用 IDEA 打开 Maven 项目
 3. 运行 KVServer 启动服务
