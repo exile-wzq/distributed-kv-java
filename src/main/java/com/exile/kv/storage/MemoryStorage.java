@@ -30,5 +30,10 @@ Storage{
             map.remove(key);
         }
     }
+
+    @Override
+    public int size(){
+        return map.size();
+    }
 }
 

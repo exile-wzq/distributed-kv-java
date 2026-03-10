@@ -27,5 +27,5 @@ public interface Storage {
 
     void delete(String key);
 
-    boolean size();
+    int size();
 }
