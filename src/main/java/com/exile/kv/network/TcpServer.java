@@ -2,8 +2,10 @@ package com.exile.kv.network;
 
 import com.exile.kv.storage.Storage;
 import com.exile.kv.protocol.CommandParser;
+
 import java.io.*;
-import java.net.*;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -20,6 +22,7 @@ public class TcpServer {
     }
 
     public void start() {
+        CommandParser cmdParser = new CommandParser(storage);
         try (ServerSocket serverSocket = new ServerSocket(port)) {
             System.out.println("KV Server 正在端口 " + port + " 监听...");
             while (true) {
@@ -28,14 +31,14 @@ public class TcpServer {
                 System.out.println("新客户端已连接：" + clientSocket.getInetAddress());
 
                 //把任务丢到线程池，主线程立刻回到上面去等下一个人
-                threadPool.execute(() -> handleClient((clientSocket)));
+                threadPool.execute(() -> handleClient(clientSocket, cmdParser));
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private void handleClient(Socket socket) {
+    private void handleClient(Socket socket, CommandParser cmdParser) {
 
         CommandParser parser = new CommandParser(storage);
 
@@ -50,10 +53,38 @@ public class TcpServer {
                 line = line.trim();
                 if(line.isEmpty()) continue;;
 
-                String response = parser.handle(line);
-                writer.println(response);
+                System.out.println("[" + Thread.currentThread().getName() + "]收到原指令：" + line);
+                String[] parts = line.split("\\s+");
+                String cmd = parts[0].toUpperCase();
 
+                // 处理 PUT key length
+                if ("PUT".equals(cmd) && parts.length >= 3) {
+                    int length;
+                    try {
+                        length = Integer.parseInt(parts[2]);
+                    } catch (NumberFormatException e) {
+                        writer.println("ERROR: invalid length");
+                        continue;
+                    }
+
+                    char[] buf = new char[length];
+                    int read = reader.read(buf, 0, length);
+                    if (read < length) {
+                        writer.println("ERROR: incomplete value");
+                        continue;
+                    }
+
+                    String value = new String(buf);
+                    String response = cmdParser.handle(line, value);
+                    writer.println(response);
+
+                } else {
+                    // GET/DEL
+                    String response = cmdParser.handle(line, null);
+                    writer.println(response);
+                }
             }
+
         } catch (IOException e) {
             System.out.println("客户端断开连接");
         }

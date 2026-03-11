@@ -10,7 +10,15 @@ public class CommandParser {
         this.storage = storage;
     }
 
-    public String handle(String line) {
+    /**
+     * line是客户端输入的第一行
+     * - PUT key length
+     * - GET key
+     * - DEL key
+     * value会单独传进来
+     */
+
+    public String handle(String line, String value) {
 
         if (line == null || line.trim().isEmpty()) {
             return "ERROR";
@@ -22,8 +30,9 @@ public class CommandParser {
         switch (cmd) {
 
             case "PUT":
-                if (parts.length < 3) return "ERROR: PUT key value";
-                storage.put(parts[1], parts[2]);
+                if (parts.length < 3) return "ERROR: PUT key length";
+                String key = parts[1];
+                storage.put(key, value);
                 return "OK";
 
             case "GET":
